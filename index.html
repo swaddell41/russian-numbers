@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Числа — Russian Numbers</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #CC2936;
+    --gold: #E8C547;
+    --dark: #0F0E0E;
+    --paper: #F5F0E8;
+    --ink: #1A1918;
+    --muted: #6B6560;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(204,41,54,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(232,197,71,0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* Decorative Cyrillic watermark */
+  body::after {
+    content: 'ЧИСЛА';
+    position: fixed;
+    bottom: -2rem;
+    right: -1rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 18vw;
+    font-weight: 900;
+    color: rgba(255,255,255,0.02);
+    pointer-events: none;
+    line-height: 1;
+    letter-spacing: -0.05em;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 680px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.4em;
+    color: var(--red);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  h1 span {
+    color: var(--gold);
+  }
+
+  .score-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+    padding: 0 0.25rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .score-val {
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .streak {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .streak-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+
+  .streak-dot.active { background: var(--gold); }
+
+  /* Number display */
+  .number-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 4px;
+    padding: 3rem 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .number-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+  }
+
+  .the-number {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(4rem, 12vw, 7rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--paper);
+    animation: fadeSlide 0.4s ease;
+  }
+
+  .number-hint {
+    margin-top: 0.75rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Options */
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .option-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 1.25rem 1rem;
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.25);
+    transform: translateY(-1px);
+  }
+
+  .option-btn:disabled { cursor: default; }
+
+  .option-btn.correct {
+    background: rgba(232,197,71,0.12);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .option-btn.wrong {
+    background: rgba(204,41,54,0.12);
+    border-color: var(--red);
+    color: rgba(204,41,54,0.8);
+    text-decoration: line-through;
+  }
+
+  .option-letter {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    font-size: 0.6rem;
+    margin-right: 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  /* Feedback */
+  .feedback {
+    height: 2rem;
+    text-align: center;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+
+  .feedback.correct { color: var(--gold); }
+  .feedback.wrong { color: var(--red); }
+
+  /* Next button */
+  .next-btn {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    background: var(--red);
+    color: var(--paper);
+    border: none;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .next-btn.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .next-btn:hover {
+    background: #e03040;
+    transform: translateY(-1px);
+  }
+
+  /* Progress */
+  .progress-track {
+    margin-top: 2rem;
+    height: 2px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+    transition: width 0.5s ease;
+  }
+
+  .stats-line {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+  /* Flash animation */
+  @keyframes flashGold {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: 0 0 30px rgba(232,197,71,0.3); }
+  }
+
+  @keyframes flashRed {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: 0 0 30px rgba(204,41,54,0.3); }
+  }
+
+  .number-card.flash-correct { animation: flashGold 0.5s ease; }
+  .number-card.flash-wrong { animation: flashRed 0.5s ease; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">Практика · Practice</div>
+    <h1>Russian <span>Numbers</span></h1>
+  </header>
+
+  <div class="score-bar">
+    <div>Score: <span class="score-val" id="score">0</span></div>
+    <div class="streak" id="streak-dots"></div>
+    <div>Best: <span class="score-val" id="best">0</span></div>
+  </div>
+
+  <div class="number-card" id="number-card">
+    <div class="the-number" id="the-number">—</div>
+    <div class="number-hint">Выберите правильный ответ</div>
+  </div>
+
+  <div class="options" id="options"></div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <button class="next-btn" id="next-btn" onclick="nextQuestion()">
+    Следующий → Next
+  </button>
+
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+  <div class="stats-line">
+    <span id="answered">0 answered</span>
+    <span id="accuracy">—% accuracy</span>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// Russian Number System
+// ═══════════════════════════════════════════════
+
+const ones = ['', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять',
+              'десять', 'одиннадцать', 'двенадцать', 'тринадцать', 'четырнадцать', 'пятнадцать',
+              'шестнадцать', 'семнадцать', 'восемнадцать', 'девятнадцать'];
+
+const tens = ['', '', 'двадцать', 'тридцать', 'сорок', 'пятьдесят',
+              'шестьдесят', 'семьдесят', 'восемьдесят', 'девяносто'];
+
+const hundreds = ['', 'сто', 'двести', 'триста', 'четыреста', 'пятьсот',
+                  'шестьсот', 'семьсот', 'восемьсот', 'девятьсот'];
+
+// Feminine forms for thousands (одна тысяча, две тысячи...)
+const onesFem = ['', 'одна', 'две', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять',
+                 'десять', 'одиннадцать', 'двенадцать', 'тринадцать', 'четырнадцать', 'пятнадцать',
+                 'шестнадцать', 'семнадцать', 'восемнадцать', 'девятнадцать'];
+
+function thousandForm(n) {
+  // Returns тысяча / тысячи / тысяч
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  if (mod100 >= 11 && mod100 <= 19) return 'тысяч';
+  if (mod10 === 1) return 'тысяча';
+  if (mod10 >= 2 && mod10 <= 4) return 'тысячи';
+  return 'тысяч';
+}
+
+function spellHundreds(n, feminine = false) {
+  // Spell a number 1-999
+  if (n === 0) return '';
+  let parts = [];
+  const h = Math.floor(n / 100);
+  const rem = n % 100;
+  if (h > 0) parts.push(hundreds[h]);
+  if (rem > 0) {
+    if (rem < 20) {
+      parts.push(feminine ? onesFem[rem] : ones[rem]);
+    } else {
+      const t = Math.floor(rem / 10);
+      const o = rem % 10;
+      parts.push(tens[t]);
+      if (o > 0) parts.push(feminine ? onesFem[o] : ones[o]);
+    }
+  }
+  return parts.filter(Boolean).join(' ');
+}
+
+function spellNumber(n) {
+  if (n === 0) return 'ноль';
+  const parts = [];
+  const thousands = Math.floor(n / 1000);
+  const remainder = n % 1000;
+
+  if (thousands > 0) {
+    const tStr = spellHundreds(thousands, true); // feminine for тысяча
+    parts.push(tStr);
+    parts.push(thousandForm(thousands));
+  }
+
+  if (remainder > 0) {
+    parts.push(spellHundreds(remainder, false));
+  }
+
+  return parts.filter(Boolean).join(' ');
+}
+
+// ═══════════════════════════════════════════════
+// Game State
+// ═══════════════════════════════════════════════
+
+let score = 0;
+let best = 0;
+let answered = 0;
+let correct = 0;
+let currentNumber = 0;
+let streakHistory = [];
+let answered_this = false;
+
+const STREAK_LEN = 10;
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateDistractor(target) {
+  // Create a plausible wrong answer
+  const strategies = [
+    () => target + rand(1, 99) * (Math.random() < 0.5 ? 1 : -1),
+    () => target + rand(100, 999) * (Math.random() < 0.5 ? 1 : -1),
+    () => {
+      // Swap two digits
+      let s = target.toString();
+      let arr = s.split('');
+      const i = rand(0, arr.length - 1);
+      const j = rand(0, arr.length - 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      return parseInt(arr.join(''));
+    },
+    () => target + rand(1000, 3000) * (Math.random() < 0.5 ? 1 : -1),
+  ];
+  
+  let d;
+  let tries = 0;
+  do {
+    const fn = strategies[rand(0, strategies.length - 1)];
+    d = fn();
+    tries++;
+  } while ((d === target || d < 1000 || d > 9999) && tries < 50);
+  
+  // If we couldn't generate a good one, just offset
+  if (d < 1000 || d > 9999) {
+    d = target + (target > 5000 ? -1234 : 1234);
+    if (d < 1000) d = 1111;
+    if (d > 9999) d = 9876;
+  }
+  return d;
+}
+
+function generateOptions(target) {
+  const nums = new Set([target]);
+  while (nums.size < 4) {
+    const d = generateDistractor(target);
+    if (d >= 1000 && d <= 9999 && d !== target) nums.add(d);
+  }
+  // Shuffle
+  return [...nums].sort(() => Math.random() - 0.5);
+}
+
+function initStreak() {
+  const container = document.getElementById('streak-dots');
+  container.innerHTML = '';
+  for (let i = 0; i < STREAK_LEN; i++) {
+    const d = document.createElement('div');
+    d.className = 'streak-dot';
+    if (i < streakHistory.length && streakHistory[streakHistory.length - STREAK_LEN + i] !== undefined) {
+      // handled in updateStreak
+    }
+    container.appendChild(d);
+  }
+  updateStreak();
+}
+
+function updateStreak() {
+  const dots = document.querySelectorAll('.streak-dot');
+  const recent = streakHistory.slice(-STREAK_LEN);
+  dots.forEach((d, i) => {
+    d.className = 'streak-dot';
+    if (recent[i] !== undefined) {
+      d.classList.add(recent[i] ? 'active' : '');
+      d.style.background = recent[i] ? '#E8C547' : '#CC2936';
+    } else {
+      d.style.background = '';
+    }
+  });
+}
+
+function nextQuestion() {
+  answered_this = false;
+  currentNumber = rand(1000, 9999);
+
+  // Render number
+  const numEl = document.getElementById('the-number');
+  numEl.style.animation = 'none';
+  numEl.offsetHeight; // reflow
+  numEl.style.animation = '';
+  numEl.textContent = currentNumber.toLocaleString('ru-RU');
+
+  // Clear feedback & next
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.classList.remove('visible');
+
+  // Remove card flash
+  const card = document.getElementById('number-card');
+  card.classList.remove('flash-correct', 'flash-wrong');
+
+  // Build options
+  const optionNums = generateOptions(currentNumber);
+  const container = document.getElementById('options');
+  container.innerHTML = '';
+
+  const labels = ['A', 'B', 'C', 'D'];
+  optionNums.forEach((num, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-letter">${labels[idx]}</span>${spellNumber(num)}`;
+    btn.onclick = () => selectAnswer(btn, num);
+    container.appendChild(btn);
+  });
+}
+
+function selectAnswer(btn, chosen) {
+  if (answered_this) return;
+  answered_this = true;
+  answered++;
+
+  const isCorrect = chosen === currentNumber;
+  const card = document.getElementById('number-card');
+  const feedback = document.getElementById('feedback');
+
+  // Disable all buttons, highlight correct/wrong
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    const num = extractNum(b);
+    if (num === currentNumber) b.classList.add('correct');
+    else if (b === btn && !isCorrect) b.classList.add('wrong');
+  });
+
+  if (isCorrect) {
+    score++;
+    correct++;
+    if (score > best) best = score;
+    feedback.textContent = '✓ Правильно! Correct!';
+    feedback.className = 'feedback correct';
+    card.classList.add('flash-correct');
+    streakHistory.push(true);
+  } else {
+    score = 0;
+    feedback.textContent = `✗ Неверно. The answer was: ${spellNumber(currentNumber)}`;
+    feedback.className = 'feedback wrong';
+    card.classList.add('flash-wrong');
+    streakHistory.push(false);
+  }
+
+  // Update displays
+  document.getElementById('score').textContent = score;
+  document.getElementById('best').textContent = best;
+  document.getElementById('answered').textContent = `${answered} answered`;
+  document.getElementById('accuracy').textContent = `${Math.round(correct/answered*100)}% accuracy`;
+  
+  const progress = Math.min(100, (correct / Math.max(answered, 1)) * 100);
+  document.getElementById('progress-fill').style.width = progress + '%';
+
+  updateStreak();
+
+  // Show next button
+  setTimeout(() => {
+    document.getElementById('next-btn').classList.add('visible');
+  }, 300);
+}
+
+function extractNum(btn) {
+  // Extract which number this button represents by re-matching text
+  const text = btn.textContent.replace(/^[A-D]/, '').trim();
+  // Find matching option by comparing spelled text
+  for (let i = 1000; i <= 9999; i++) {
+    // Too slow — store as data attribute instead
+  }
+  return parseInt(btn.dataset.num);
+}
+
+// Better approach: store num in dataset
+function selectAnswerFixed() {} // handled below
+
+// ═══════════════════════════════════════════════
+// Fixed option building with data attribute
+// ═══════════════════════════════════════════════
+
+function nextQuestionFinal() {
+  answered_this = false;
+  currentNumber = rand(1000, 9999);
+
+  const numEl = document.getElementById('the-number');
+  numEl.style.animation = 'none';
+  numEl.offsetHeight;
+  numEl.style.animation = '';
+  numEl.textContent = currentNumber.toLocaleString();
+
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('next-btn').classList.remove('visible');
+  const card = document.getElementById('number-card');
+  card.classList.remove('flash-correct', 'flash-wrong');
+
+  const optionNums = generateOptions(currentNumber);
+  const container = document.getElementById('options');
+  container.innerHTML = '';
+
+  const labels = ['A', 'B', 'C', 'D'];
+  optionNums.forEach((num, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.dataset.num = num;
+    btn.innerHTML = `<span class="option-letter">${labels[idx]}</span>${spellNumber(num)}`;
+    btn.onclick = () => selectAnswerFinal(btn, num);
+    container.appendChild(btn);
+  });
+}
+
+function selectAnswerFinal(btn, chosen) {
+  if (answered_this) return;
+  answered_this = true;
+  answered++;
+
+  const isCorrect = chosen === currentNumber;
+  const card = document.getElementById('number-card');
+  const feedback = document.getElementById('feedback');
+
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    if (parseInt(b.dataset.num) === currentNumber) b.classList.add('correct');
+    else if (b === btn && !isCorrect) b.classList.add('wrong');
+  });
+
+  if (isCorrect) {
+    score++;
+    correct++;
+    if (score > best) best = score;
+    feedback.textContent = '✓ Правильно! Correct!';
+    feedback.className = 'feedback correct';
+    card.classList.add('flash-correct');
+    streakHistory.push(true);
+  } else {
+    score = 0;
+    feedback.textContent = `✗ The answer: ${spellNumber(currentNumber)}`;
+    feedback.className = 'feedback wrong';
+    card.classList.add('flash-wrong');
+    streakHistory.push(false);
+  }
+
+  document.getElementById('score').textContent = score;
+  document.getElementById('best').textContent = best;
+  document.getElementById('answered').textContent = `${answered} answered`;
+  document.getElementById('accuracy').textContent = `${Math.round(correct/answered*100)}% accuracy`;
+  document.getElementById('progress-fill').style.width = Math.round(correct/answered*100) + '%';
+
+  updateStreak();
+  setTimeout(() => document.getElementById('next-btn').classList.add('visible'), 400);
+}
+
+// Patch the next button to use the final version
+document.getElementById('next-btn').onclick = nextQuestionFinal;
+
+// ═══════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════
+initStreak();
+nextQuestionFinal();
+</script>
+</body>
+</html>
