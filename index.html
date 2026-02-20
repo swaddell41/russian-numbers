@@ -327,7 +327,7 @@
 
   <div class="feedback" id="feedback"></div>
 
-  <button class="next-btn" id="next-btn" onclick="nextQuestion()">
+  <button class="next-btn" id="next-btn" onclick="nextQuestionFinal()">
     Следующий → Next
   </button>
 
@@ -397,9 +397,12 @@ function spellNumber(n) {
   const remainder = n % 1000;
 
   if (thousands > 0) {
-    const tStr = spellHundreds(thousands, true); // feminine for тысяча
-    parts.push(tStr);
-    parts.push(thousandForm(thousands));
+    if (thousands === 1) {
+      parts.push('тысяча');
+    } else {
+      parts.push(spellHundreds(thousands, true));
+      parts.push(thousandForm(thousands));
+    }
   }
 
   if (remainder > 0) {
@@ -499,109 +502,6 @@ function updateStreak() {
   });
 }
 
-function nextQuestion() {
-  answered_this = false;
-  currentNumber = rand(1000, 9999);
-
-  // Render number
-  const numEl = document.getElementById('the-number');
-  numEl.style.animation = 'none';
-  numEl.offsetHeight; // reflow
-  numEl.style.animation = '';
-  numEl.textContent = currentNumber.toLocaleString('ru-RU');
-
-  // Clear feedback & next
-  document.getElementById('feedback').textContent = '';
-  document.getElementById('feedback').className = 'feedback';
-  const nextBtn = document.getElementById('next-btn');
-  nextBtn.classList.remove('visible');
-
-  // Remove card flash
-  const card = document.getElementById('number-card');
-  card.classList.remove('flash-correct', 'flash-wrong');
-
-  // Build options
-  const optionNums = generateOptions(currentNumber);
-  const container = document.getElementById('options');
-  container.innerHTML = '';
-
-  const labels = ['A', 'B', 'C', 'D'];
-  optionNums.forEach((num, idx) => {
-    const btn = document.createElement('button');
-    btn.className = 'option-btn';
-    btn.innerHTML = `<span class="option-letter">${labels[idx]}</span>${spellNumber(num)}`;
-    btn.onclick = () => selectAnswer(btn, num);
-    container.appendChild(btn);
-  });
-}
-
-function selectAnswer(btn, chosen) {
-  if (answered_this) return;
-  answered_this = true;
-  answered++;
-
-  const isCorrect = chosen === currentNumber;
-  const card = document.getElementById('number-card');
-  const feedback = document.getElementById('feedback');
-
-  // Disable all buttons, highlight correct/wrong
-  document.querySelectorAll('.option-btn').forEach(b => {
-    b.disabled = true;
-    const num = extractNum(b);
-    if (num === currentNumber) b.classList.add('correct');
-    else if (b === btn && !isCorrect) b.classList.add('wrong');
-  });
-
-  if (isCorrect) {
-    score++;
-    correct++;
-    if (score > best) best = score;
-    feedback.textContent = '✓ Правильно! Correct!';
-    feedback.className = 'feedback correct';
-    card.classList.add('flash-correct');
-    streakHistory.push(true);
-  } else {
-    score = 0;
-    feedback.textContent = `✗ Неверно. The answer was: ${spellNumber(currentNumber)}`;
-    feedback.className = 'feedback wrong';
-    card.classList.add('flash-wrong');
-    streakHistory.push(false);
-  }
-
-  // Update displays
-  document.getElementById('score').textContent = score;
-  document.getElementById('best').textContent = best;
-  document.getElementById('answered').textContent = `${answered} answered`;
-  document.getElementById('accuracy').textContent = `${Math.round(correct/answered*100)}% accuracy`;
-  
-  const progress = Math.min(100, (correct / Math.max(answered, 1)) * 100);
-  document.getElementById('progress-fill').style.width = progress + '%';
-
-  updateStreak();
-
-  // Show next button
-  setTimeout(() => {
-    document.getElementById('next-btn').classList.add('visible');
-  }, 300);
-}
-
-function extractNum(btn) {
-  // Extract which number this button represents by re-matching text
-  const text = btn.textContent.replace(/^[A-D]/, '').trim();
-  // Find matching option by comparing spelled text
-  for (let i = 1000; i <= 9999; i++) {
-    // Too slow — store as data attribute instead
-  }
-  return parseInt(btn.dataset.num);
-}
-
-// Better approach: store num in dataset
-function selectAnswerFixed() {} // handled below
-
-// ═══════════════════════════════════════════════
-// Fixed option building with data attribute
-// ═══════════════════════════════════════════════
-
 function nextQuestionFinal() {
   answered_this = false;
   currentNumber = rand(1000, 9999);
@@ -673,9 +573,6 @@ function selectAnswerFinal(btn, chosen) {
   updateStreak();
   setTimeout(() => document.getElementById('next-btn').classList.add('visible'), 400);
 }
-
-// Patch the next button to use the final version
-document.getElementById('next-btn').onclick = nextQuestionFinal;
 
 // ═══════════════════════════════════════════════
 // Init
